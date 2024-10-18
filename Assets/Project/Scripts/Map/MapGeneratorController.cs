@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -21,6 +22,9 @@ public class MapGeneratorController : MonoBehaviour
     [SerializeField] private GameObject spawnPlayer;    
     [Header("Spawn Monster Script")]
     [SerializeField] private GameObject spawnMonster;
+    
+    internal List<GameObject> waypoints;
+    [SerializeField] private NavMeshSurface navSurface;
 
 
     //Maze generation
@@ -36,10 +40,13 @@ public class MapGeneratorController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        waypoints = new List<GameObject>();
+        
         while(minRoomCount < minRoom) GenerateMaze(maxRoomX, maxRoomY);
         //GenerateMaze(maxRoomX, maxRoomY);
         GenerateRooms(maxRoomX, maxRoomY);
         RandomSpawnPlayer(maxRoomX, maxRoomY);
+        navSurface.BuildNavMesh();
     }
 
     //Create the maze
@@ -135,8 +142,6 @@ public class MapGeneratorController : MonoBehaviour
         {
             //Enseure spawn player at least one room
             Instantiate(spawnPlayer, new Vector3(roomPos[0, initialColumn].x, roomPos[0, initialColumn].y + 2, roomPos[0, initialColumn].z), Quaternion.identity);
-            Debug.Log("Here");
-            
         }
         else
         {
@@ -146,10 +151,22 @@ public class MapGeneratorController : MonoBehaviour
             // Instanciar el jugador en esa sala
             Instantiate(spawnPlayer, new Vector3(playerRoomPosition.x, playerRoomPosition.y + 2, playerRoomPosition.z), Quaternion.identity);
 
+            // Recorrer cada posición de las salas y crear un GameObject vacío
+            foreach (Vector3 roomPosition in availableRoomPositions)
+            {
+                // Crear un GameObject vacío con el nombre "Waypoint"
+                GameObject waypoint = new GameObject("Waypoint");
+        
+                // Colocar el GameObject en la posición de la sala
+                waypoint.transform.position = roomPosition;
+
+                // Añadir el GameObject a la lista de waypoints
+                waypoints.Add(waypoint);
+            }
             // Lista de salas filtrada, excluyendo la sala del jugador
             List<Vector3> remainingRooms = new List<Vector3>(availableRoomPositions);
             remainingRooms.RemoveAt(playerIndex);
-
+            
             if (remainingRooms.Count > 0) // Asegurarse de que hay al menos otra sala disponible
             {
                 // Selecciona una sala diferente para el monstruo
